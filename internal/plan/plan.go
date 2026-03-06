@@ -110,6 +110,18 @@ func Build(cfg *config.Config) (*Plan, error) {
 	}
 	actions = append(actions, redisActions...)
 
+	rspamdActions, err := buildRspamdActions(cfg)
+	if err != nil {
+		return nil, err
+	}
+	actions = append(actions, rspamdActions...)
+
+	dovecotActions, err := buildDovecotActions(cfg)
+	if err != nil {
+		return nil, err
+	}
+	actions = append(actions, dovecotActions...)
+
 	return &Plan{
 		GeneratedAt: time.Now().UTC(),
 		ConfigName:  cfg.Metadata.Name,

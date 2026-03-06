@@ -201,12 +201,19 @@ The current implementation covers:
 - Redis module jail creation
 - package installation inside the Redis jail
 - Redis service enable and start orchestration
+- Rspamd module jail creation
+- package installation inside the Rspamd jail
+- Rspamd service enable and start orchestration
+- Dovecot module jail creation
+- package installation inside the Dovecot jail
+- Dovecot service enable and start orchestration
 - local apply state recording
 
 The next practical goals are:
 
 - config rendering
-- additional module planners and health checks
+- health checks
+- Postfix module planner
 - restart and upgrade workflows
 
 ## Development
