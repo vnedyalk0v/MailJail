@@ -20,6 +20,7 @@ const (
 	ActionEnsureBaseJail      ActionType = "EnsureJail"
 	ActionInstallPackages     ActionType = "InstallPackages"
 	ActionEnableService       ActionType = "EnableService"
+	ActionRenderModuleConfig  ActionType = "RenderModuleConfig"
 	ActionStartService        ActionType = "StartService"
 )
 

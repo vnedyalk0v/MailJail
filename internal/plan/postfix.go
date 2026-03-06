@@ -78,6 +78,17 @@ func buildPostfixActions(cfg *config.Config) ([]Action, error) {
 			},
 		},
 		{
+			Type:    ActionRenderModuleConfig,
+			Target:  jailName,
+			Summary: fmt.Sprintf("render secure postfix baseline config inside jail %s and reload only on drift", jailName),
+			Items:   []string{"/usr/local/etc/postfix/main.cf"},
+			Metadata: map[string]string{
+				"module":  postfixModuleName,
+				"jail":    jailName,
+				"service": postfixServiceName,
+			},
+		},
+		{
 			Type:           ActionStartService,
 			Target:         postfixServiceName,
 			Summary:        fmt.Sprintf("start postfix service inside jail %s", jailName),

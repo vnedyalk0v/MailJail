@@ -81,7 +81,7 @@ func TestBuildIncludesRedisModuleActions(t *testing.T) {
 		t.Fatalf("Build returned error: %v", err)
 	}
 
-	if got, want := len(pl.Actions), 9; got != want {
+	if got, want := len(pl.Actions), 10; got != want {
 		t.Fatalf("expected %d actions, got %d", want, got)
 	}
 
@@ -97,7 +97,11 @@ func TestBuildIncludesRedisModuleActions(t *testing.T) {
 		t.Fatalf("expected redis enable action type %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[8].Type, ActionStartService; got != want {
+	if got, want := pl.Actions[8].Type, ActionRenderModuleConfig; got != want {
+		t.Fatalf("expected redis render action type %q, got %q", want, got)
+	}
+
+	if got, want := pl.Actions[9].Type, ActionStartService; got != want {
 		t.Fatalf("expected redis start action type %q, got %q", want, got)
 	}
 }
@@ -132,23 +136,27 @@ func TestBuildIncludesRspamdModuleActions(t *testing.T) {
 		t.Fatalf("Build returned error: %v", err)
 	}
 
-	if got, want := len(pl.Actions), 13; got != want {
+	if got, want := len(pl.Actions), 15; got != want {
 		t.Fatalf("expected %d actions, got %d", want, got)
 	}
 
-	if got, want := pl.Actions[9].Target, "mx1-rspamd"; got != want {
+	if got, want := pl.Actions[10].Target, "mx1-rspamd"; got != want {
 		t.Fatalf("expected rspamd jail target %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[10].Type, ActionInstallPackages; got != want {
+	if got, want := pl.Actions[11].Type, ActionInstallPackages; got != want {
 		t.Fatalf("expected rspamd package action type %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[11].Type, ActionEnableService; got != want {
+	if got, want := pl.Actions[12].Type, ActionEnableService; got != want {
 		t.Fatalf("expected rspamd enable action type %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[12].Type, ActionStartService; got != want {
+	if got, want := pl.Actions[13].Type, ActionRenderModuleConfig; got != want {
+		t.Fatalf("expected rspamd render action type %q, got %q", want, got)
+	}
+
+	if got, want := pl.Actions[14].Type, ActionStartService; got != want {
 		t.Fatalf("expected rspamd start action type %q, got %q", want, got)
 	}
 }
@@ -183,23 +191,23 @@ func TestBuildIncludesDovecotModuleActions(t *testing.T) {
 		t.Fatalf("Build returned error: %v", err)
 	}
 
-	if got, want := len(pl.Actions), 17; got != want {
+	if got, want := len(pl.Actions), 19; got != want {
 		t.Fatalf("expected %d actions, got %d", want, got)
 	}
 
-	if got, want := pl.Actions[13].Target, "mx1-dovecot"; got != want {
+	if got, want := pl.Actions[15].Target, "mx1-dovecot"; got != want {
 		t.Fatalf("expected dovecot jail target %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[14].Type, ActionInstallPackages; got != want {
+	if got, want := pl.Actions[16].Type, ActionInstallPackages; got != want {
 		t.Fatalf("expected dovecot package action type %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[15].Type, ActionEnableService; got != want {
+	if got, want := pl.Actions[17].Type, ActionEnableService; got != want {
 		t.Fatalf("expected dovecot enable action type %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[16].Type, ActionStartService; got != want {
+	if got, want := pl.Actions[18].Type, ActionStartService; got != want {
 		t.Fatalf("expected dovecot start action type %q, got %q", want, got)
 	}
 }
@@ -234,23 +242,27 @@ func TestBuildIncludesPostfixModuleActions(t *testing.T) {
 		t.Fatalf("Build returned error: %v", err)
 	}
 
-	if got, want := len(pl.Actions), 21; got != want {
+	if got, want := len(pl.Actions), 24; got != want {
 		t.Fatalf("expected %d actions, got %d", want, got)
 	}
 
-	if got, want := pl.Actions[17].Target, "mx1-postfix"; got != want {
+	if got, want := pl.Actions[19].Target, "mx1-postfix"; got != want {
 		t.Fatalf("expected postfix jail target %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[18].Type, ActionInstallPackages; got != want {
+	if got, want := pl.Actions[20].Type, ActionInstallPackages; got != want {
 		t.Fatalf("expected postfix package action type %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[19].Type, ActionEnableService; got != want {
+	if got, want := pl.Actions[21].Type, ActionEnableService; got != want {
 		t.Fatalf("expected postfix enable action type %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[20].Type, ActionStartService; got != want {
+	if got, want := pl.Actions[22].Type, ActionRenderModuleConfig; got != want {
+		t.Fatalf("expected postfix render action type %q, got %q", want, got)
+	}
+
+	if got, want := pl.Actions[23].Type, ActionStartService; got != want {
 		t.Fatalf("expected postfix start action type %q, got %q", want, got)
 	}
 }

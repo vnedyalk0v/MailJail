@@ -78,6 +78,17 @@ func buildRedisActions(cfg *config.Config) ([]Action, error) {
 			},
 		},
 		{
+			Type:    ActionRenderModuleConfig,
+			Target:  jailName,
+			Summary: fmt.Sprintf("render secure redis config inside jail %s and reload only on drift", jailName),
+			Items:   []string{"/usr/local/etc/redis.conf"},
+			Metadata: map[string]string{
+				"module":  redisModuleName,
+				"jail":    jailName,
+				"service": redisServiceName,
+			},
+		},
+		{
 			Type:           ActionStartService,
 			Target:         redisServiceName,
 			Summary:        fmt.Sprintf("start redis service inside jail %s", jailName),

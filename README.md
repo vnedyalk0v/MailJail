@@ -200,21 +200,25 @@ The current implementation covers:
 - base jail creation
 - Redis module jail creation
 - package installation inside the Redis jail
+- secure Redis config rendering with protected mode, bounded bind addresses, and append-only persistence
 - Redis service enable and start orchestration
 - Rspamd module jail creation
 - package installation inside the Rspamd jail
+- secure Rspamd config rendering with local-only controller access, proxy worker binding, and Redis wiring
 - Rspamd service enable and start orchestration
 - Dovecot module jail creation
 - package installation inside the Dovecot jail
 - Dovecot service enable and start orchestration
 - Postfix module jail creation
 - package installation inside the Postfix jail
+- secure Postfix baseline config rendering with Rspamd milter wiring and conservative relay defaults
 - Postfix service enable and start orchestration
+- config drift detection with reload/restart only when rendered files change
 - local apply state recording
 
 The next practical goals are:
 
-- config rendering
+- Dovecot TLS and auth rendering once the certificate and identity layers exist
 - health checks
 - richer mail-service configuration
 - restart and upgrade workflows

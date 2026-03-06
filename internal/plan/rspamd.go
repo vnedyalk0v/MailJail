@@ -78,6 +78,22 @@ func buildRspamdActions(cfg *config.Config) ([]Action, error) {
 			},
 		},
 		{
+			Type:    ActionRenderModuleConfig,
+			Target:  jailName,
+			Summary: fmt.Sprintf("render secure rspamd config inside jail %s and reload only on drift", jailName),
+			Items: []string{
+				"/usr/local/etc/rspamd/local.d/worker-proxy.inc",
+				"/usr/local/etc/rspamd/local.d/worker-controller.inc",
+				"/usr/local/etc/rspamd/local.d/worker-normal.inc",
+				"/usr/local/etc/rspamd/local.d/redis.conf",
+			},
+			Metadata: map[string]string{
+				"module":  rspamdModuleName,
+				"jail":    jailName,
+				"service": rspamdServiceName,
+			},
+		},
+		{
 			Type:           ActionStartService,
 			Target:         rspamdServiceName,
 			Summary:        fmt.Sprintf("start rspamd service inside jail %s", jailName),

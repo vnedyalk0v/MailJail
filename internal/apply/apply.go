@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/netip"
+	"strconv"
 	"time"
 
 	"github.com/vnedyalk0v/mailjail/internal/config"
@@ -13,6 +14,7 @@ import (
 	"github.com/vnedyalk0v/mailjail/internal/host/pf"
 	"github.com/vnedyalk0v/mailjail/internal/host/zfs"
 	"github.com/vnedyalk0v/mailjail/internal/plan"
+	"github.com/vnedyalk0v/mailjail/internal/render"
 )
 
 type Result struct {
@@ -85,6 +87,8 @@ func (a *Applier) executeAction(ctx context.Context, action plan.Action) error {
 		return a.ensurePackages(ctx, action)
 	case plan.ActionEnableService:
 		return a.enableService(ctx, action)
+	case plan.ActionRenderModuleConfig:
+		return a.renderModuleConfig(ctx, action)
 	case plan.ActionStartService:
 		return a.startService(ctx, action)
 	default:
@@ -133,6 +137,39 @@ func (a *Applier) enableService(ctx context.Context, action plan.Action) error {
 	}
 
 	return a.bastille.SetRC(ctx, jail, rcvar)
+}
+
+func (a *Applier) renderModuleConfig(ctx context.Context, action plan.Action) error {
+	module := action.Metadata["module"]
+	jail := action.Metadata["jail"]
+	service := action.Metadata["service"]
+	if module == "" || jail == "" || service == "" {
+		return fmt.Errorf("render config action requires module, jail, and service metadata")
+	}
+
+	files, err := render.FilesForModule(a.cfg, module)
+	if err != nil {
+		return err
+	}
+
+	changedAny := false
+	for _, file := range files {
+		changed, syncErr := a.bastille.SyncFile(jail, file.Path, []byte(file.Content), file.Mode)
+		if syncErr != nil {
+			return fmt.Errorf("sync %s config file %s: %w", module, file.Path, syncErr)
+		}
+		if changed {
+			changedAny = true
+			a.logger.Info("updated rendered config", "module", module, "jail", jail, "path", file.Path, "mode", strconv.FormatUint(uint64(file.Mode.Perm()), 8))
+		}
+	}
+
+	if !changedAny {
+		a.logger.Info("rendered config already current", "module", module, "jail", jail)
+		return nil
+	}
+
+	return a.bastille.ReloadOrRestartServiceIfRunning(ctx, jail, service)
 }
 
 func (a *Applier) startService(ctx context.Context, action plan.Action) error {
