@@ -195,13 +195,13 @@ The current implementation covers:
 - host preflight checks
 - deterministic plan generation
 - ZFS dataset creation
+- PF anchor rendering and loading
 - Bastille release bootstrap
 - base jail creation
 - local apply state recording
 
 The next practical goals are:
 
-- PF integration
 - package installation inside jails
 - config rendering
 - module-specific planners and health checks

@@ -34,15 +34,19 @@ func TestBuildCreatesFirstSliceActions(t *testing.T) {
 		t.Fatalf("Build returned error: %v", err)
 	}
 
-	if got, want := len(pl.Actions), 4; got != want {
+	if got, want := len(pl.Actions), 5; got != want {
 		t.Fatalf("expected %d actions, got %d", want, got)
 	}
 
-	if got, want := pl.Actions[3].Target, "mx1-base"; got != want {
+	if got, want := pl.Actions[3].Type, ActionEnsurePFAnchor; got != want {
+		t.Fatalf("expected fourth action type %q, got %q", want, got)
+	}
+
+	if got, want := pl.Actions[4].Target, "mx1-base"; got != want {
 		t.Fatalf("expected base jail target %q, got %q", want, got)
 	}
 
-	if got, want := pl.Actions[3].CommandPreview[4], "10.77.0.2/24"; got != want {
+	if got, want := pl.Actions[4].CommandPreview[4], "10.77.0.2/24"; got != want {
 		t.Fatalf("expected base jail IP %q, got %q", want, got)
 	}
 }

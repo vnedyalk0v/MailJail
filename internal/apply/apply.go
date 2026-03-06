@@ -7,8 +7,10 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/vnedyalk0v/mailjail/internal/config"
 	"github.com/vnedyalk0v/mailjail/internal/host/bastille"
 	"github.com/vnedyalk0v/mailjail/internal/host/command"
+	"github.com/vnedyalk0v/mailjail/internal/host/pf"
 	"github.com/vnedyalk0v/mailjail/internal/host/zfs"
 	"github.com/vnedyalk0v/mailjail/internal/plan"
 )
@@ -24,13 +26,17 @@ type Result struct {
 
 type Applier struct {
 	bastille bastille.Client
+	cfg      *config.Config
+	pf       pf.Client
 	zfs      zfs.Client
 	logger   *slog.Logger
 }
 
-func New(runner command.Runner, logger *slog.Logger) *Applier {
+func New(runner command.Runner, logger *slog.Logger, cfg *config.Config) *Applier {
 	return &Applier{
 		bastille: bastille.New(runner),
+		cfg:      cfg,
+		pf:       pf.New(runner),
 		zfs:      zfs.New(runner),
 		logger:   logger,
 	}
@@ -71,6 +77,8 @@ func (a *Applier) executeAction(ctx context.Context, action plan.Action) error {
 		return a.zfs.EnsureDataset(ctx, action.Target)
 	case plan.ActionEnsureBastilleSetup:
 		return a.bastille.EnsureRelease(ctx, action.Target)
+	case plan.ActionEnsurePFAnchor:
+		return a.pf.EnsureAnchor(ctx, a.cfg)
 	case plan.ActionEnsureBaseJail:
 		return a.ensureBaseJail(ctx, action)
 	default:

@@ -197,7 +197,7 @@ func runApply(ctx context.Context, logger *slog.Logger, args []string, stdout, s
 		return 1
 	}
 
-	applier := apply.New(command.OSRunner{}, logger)
+	applier := apply.New(command.OSRunner{}, logger, cfg)
 	execResults, err := applier.Execute(ctx, pl)
 	for _, result := range execResults {
 		status := "ok"

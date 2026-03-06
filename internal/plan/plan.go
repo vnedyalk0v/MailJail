@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/vnedyalk0v/mailjail/internal/config"
+	"github.com/vnedyalk0v/mailjail/internal/host/pf"
+	"github.com/vnedyalk0v/mailjail/internal/topology"
 )
 
 type ActionType string
@@ -14,6 +16,7 @@ type ActionType string
 const (
 	ActionEnsureDataset       ActionType = "EnsureDataset"
 	ActionEnsureBastilleSetup ActionType = "EnsureBastilleRelease"
+	ActionEnsurePFAnchor      ActionType = "EnsurePFAnchor"
 	ActionEnsureBaseJail      ActionType = "EnsureJail"
 )
 
@@ -35,12 +38,12 @@ type Plan struct {
 }
 
 func Build(cfg *config.Config) (*Plan, error) {
-	baseJailIP, err := deriveBaseJailIP(cfg)
+	baseJailIP, err := topology.DeriveBaseJailIP(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	baseJailTarget := BaseJailName(cfg)
+	baseJailTarget := topology.BaseJailName(cfg)
 	release := cfg.Host.Bastille.Release
 	prefixBits, _ := netip.ParsePrefix(cfg.Network.JailsSubnet)
 
@@ -62,6 +65,18 @@ func Build(cfg *config.Config) (*Plan, error) {
 			Target:         cfg.Host.JailDatasetRoot,
 			Summary:        fmt.Sprintf("ensure MailJail dataset root %s exists", cfg.Host.JailDatasetRoot),
 			CommandPreview: []string{"zfs", "create", "-p", cfg.Host.JailDatasetRoot},
+		},
+		{
+			Type:    ActionEnsurePFAnchor,
+			Target:  pf.AnchorName(cfg),
+			Summary: fmt.Sprintf("ensure PF anchor %s is rendered and loaded", pf.AnchorName(cfg)),
+			CommandPreview: []string{
+				"pfctl",
+				"-a",
+				pf.AnchorName(cfg),
+				"-f",
+				pf.AnchorFilePath(cfg),
+			},
 		},
 		{
 			Type:   ActionEnsureBaseJail,
@@ -89,45 +104,4 @@ func Build(cfg *config.Config) (*Plan, error) {
 		ConfigName:  cfg.Metadata.Name,
 		Actions:     actions,
 	}, nil
-}
-
-func BaseJailName(cfg *config.Config) string {
-	return cfg.Metadata.Name + "-base"
-}
-
-func deriveBaseJailIP(cfg *config.Config) (netip.Addr, error) {
-	prefix, err := netip.ParsePrefix(cfg.Network.JailsSubnet)
-	if err != nil {
-		return netip.Addr{}, fmt.Errorf("parse subnet: %w", err)
-	}
-	gateway, err := netip.ParseAddr(cfg.Network.Gateway4)
-	if err != nil {
-		return netip.Addr{}, fmt.Errorf("parse gateway: %w", err)
-	}
-
-	used := map[netip.Addr]struct{}{
-		gateway: {},
-	}
-	for _, module := range cfg.Modules {
-		if !module.Enabled || module.IP4 == "" {
-			continue
-		}
-		addr, parseErr := netip.ParseAddr(module.IP4)
-		if parseErr != nil {
-			continue
-		}
-		used[addr] = struct{}{}
-	}
-
-	for candidate := prefix.Addr().Next(); prefix.Contains(candidate); candidate = candidate.Next() {
-		if !candidate.Is4() || candidate == prefix.Addr() {
-			continue
-		}
-		if _, exists := used[candidate]; exists {
-			continue
-		}
-		return candidate, nil
-	}
-
-	return netip.Addr{}, fmt.Errorf("no free IPs available in %s for the base jail", cfg.Network.JailsSubnet)
 }
