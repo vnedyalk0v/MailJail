@@ -44,7 +44,6 @@ jobs:
           artifact="mailjail_${version}_freebsd_${GOARCH}"
           GOOS="${GOOS}" GOARCH="${GOARCH}" go build -trimpath -ldflags="-s -w -X main.version=${version}" -o "${artifact}" ./cmd/mailjail
           tar -czf "dist/${artifact}.tar.gz" "${artifact}" README.md
-          sha256sum "dist/${artifact}.tar.gz" > "dist/${artifact}.tar.gz.sha256"
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
@@ -52,7 +51,6 @@ jobs:
           name: release-freebsd-${{ matrix.goarch }}
           path: |
             dist/*.tar.gz
-            dist/*.sha256
           if-no-files-found: error
 
   publish:
@@ -70,10 +68,15 @@ jobs:
           pattern: release-freebsd-*
           merge-multiple: true
 
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum *.tar.gz > "${GITHUB_REF_NAME}_checksums.txt"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             dist/*.tar.gz
-            dist/*.sha256
+            dist/*_checksums.txt

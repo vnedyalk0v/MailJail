@@ -9,7 +9,7 @@ GOVULNCHECK_VERSION ?= latest
 GOLANGCI_LINT ?= $(TOOLS_BIN_DIR)/golangci-lint
 GOVULNCHECK ?= $(TOOLS_BIN_DIR)/govulncheck
 
-.PHONY: tools install-hooks fmt fmt-check mod-check test race vet lint vuln build build-freebsd-amd64 build-freebsd-arm64 clean ci check
+.PHONY: tools install-hooks fmt fmt-check mod-check test race vet lint vuln shell-check build build-freebsd-amd64 build-freebsd-arm64 clean ci check
 
 tools:
 	mkdir -p $(TOOLS_BIN_DIR)
@@ -45,6 +45,9 @@ lint: tools
 vuln: tools
 	$(GOVULNCHECK) ./...
 
+shell-check:
+	sh -n scripts/install.sh
+
 build:
 	mkdir -p $(DIST_DIR)
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(GOFLAGS) -trimpath -o $(DIST_DIR)/$(BINARY) ./cmd/mailjail
@@ -57,7 +60,7 @@ build-freebsd-arm64:
 	mkdir -p $(DIST_DIR)
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=freebsd GOARCH=arm64 $(GO) build $(GOFLAGS) -trimpath -ldflags="-s -w" -o $(DIST_DIR)/$(BINARY)-freebsd-arm64 ./cmd/mailjail
 
-ci: fmt-check mod-check test race vet
+ci: fmt-check mod-check test race vet shell-check
 
 check: ci lint vuln
 

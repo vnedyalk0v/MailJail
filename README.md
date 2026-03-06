@@ -242,3 +242,43 @@ GitHub Actions now builds release artifacts for:
 
 - `freebsd/amd64`
 - `freebsd/arm64`
+
+## Install on FreeBSD
+
+The release pipeline publishes signed release artifacts for:
+
+- `freebsd/amd64`
+- `freebsd/arm64`
+
+To install the latest release directly on a FreeBSD host:
+
+```text
+fetch -o - https://raw.githubusercontent.com/vnedyalk0v/MailJail/main/scripts/install.sh | sh
+```
+
+If `curl` is preferred:
+
+```text
+curl -fsSL https://raw.githubusercontent.com/vnedyalk0v/MailJail/main/scripts/install.sh | sh
+```
+
+The installer:
+
+- detects `amd64` or `arm64`
+- downloads the matching GitHub Release artifact
+- verifies its SHA-256 checksum
+- installs `mailjail` to `/usr/local/bin`
+
+Optional environment variables:
+
+```text
+MAILJAIL_VERSION=v0.1.0
+MAILJAIL_INSTALL_DIR=/usr/local/bin
+MAILJAIL_REPO=vnedyalk0v/MailJail
+```
+
+Example:
+
+```text
+env MAILJAIL_VERSION=v0.1.0 fetch -o - https://raw.githubusercontent.com/vnedyalk0v/MailJail/main/scripts/install.sh | sh
+```
