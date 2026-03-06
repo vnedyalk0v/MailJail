@@ -18,7 +18,7 @@ Reasons:
 - good fit for executing and supervising host commands
 - low operational overhead on FreeBSD hosts
 
-The CLI should use a standard command framework such as Cobra and structured logging in JSON and human-readable formats.
+The current implementation uses a stdlib-first command model built on `flag` and `log/slog`. That keeps the dependency tree small and the CLI startup path lightweight.
 
 ## Core Design Principles
 
@@ -102,9 +102,9 @@ internal/modules/redis
 internal/modules/db
 internal/modules/web
 internal/host/bastille
+internal/host/command
 internal/host/zfs
 internal/host/pf
-internal/host/pkg
 internal/host/service
 internal/host/preflight
 internal/render
@@ -127,7 +127,6 @@ The planner converts desired state into a linear execution plan composed of type
 
 Example action categories:
 
-- `EnsureBastilleInstalled`
 - `EnsureBastilleRelease`
 - `EnsureDataset`
 - `EnsureBridge`
@@ -155,11 +154,8 @@ MailJail should maintain a local state directory, for example:
 
 ```text
 /var/db/mailjail/
-  state.json
-  plans/
-  renders/
-  backups/
-  logs/
+  latest.json
+  history/
 ```
 
 This state is not the source of truth for desired configuration. The YAML config remains the source of truth. The local state exists to support:
@@ -196,7 +192,7 @@ This keeps module-specific logic out of the global planner and makes it possible
 
 ## First Deliverable
 
-The first working milestone should include only:
+The first working milestone is now implemented with:
 
 1. `init`
 2. `validate`

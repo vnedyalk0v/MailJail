@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Show Go version
+        run: go version
+
+      - name: Verify formatting
+        run: |
+          test -z "$(gofmt -l cmd internal)"
+
+      - name: Verify module files
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Build
+        run: go build ./cmd/mailjail
+
+      - name: Unit tests with coverage
+        run: go test -coverprofile=coverage.out ./...
+
+      - name: Race tests
+        run: go test -race ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage.out
+          path: coverage.out
+          if-no-files-found: error
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.6
+          args: --timeout=5m
+
+  vuln:
+    name: Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        run: govulncheck ./...
+
+  build-freebsd:
+    name: Build FreeBSD (${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - verify
+      - lint
+      - vuln
+    strategy:
+      fail-fast: false
+      matrix:
+        goarch:
+          - amd64
+          - arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Build tarball
+        env:
+          CGO_ENABLED: "0"
+          GOOS: freebsd
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          mkdir -p dist
+          binary="mailjail-freebsd-${GOARCH}"
+          tarball="dist/${binary}.tar.gz"
+          GOOS="${GOOS}" GOARCH="${GOARCH}" go build -trimpath -ldflags="-s -w" -o "${binary}" ./cmd/mailjail
+          tar -czf "${tarball}" "${binary}" README.md
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mailjail-freebsd-${{ matrix.goarch }}
+          path: dist/mailjail-freebsd-${{ matrix.goarch }}.tar.gz
+          if-no-files-found: error

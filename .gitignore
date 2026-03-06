@@ -1,0 +1,4 @@
+dist/
+.mailjail/
+coverage.out
+mailjail

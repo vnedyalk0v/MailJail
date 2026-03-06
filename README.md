@@ -62,7 +62,7 @@ Each component must be able to:
 
 Manual steps outside the CLI tool should not be required for a standard deployment.
 
-## Planned CLI Contract
+## CLI Contract
 
 Example commands:
 
@@ -77,7 +77,7 @@ mailjail restart <module>
 mailjail destroy --keep-data
 ```
 
-The first implementation target is a single `mailjail` CLI binary that drives Bastille, ZFS, PF, `pkg`, and service management from a declarative config file. See [docs/cli.md](/Users/vnedyalk0v/Projects/Personal/MailJail/docs/cli.md) for the command model and [docs/adr/0001-use-bastille.md](/Users/vnedyalk0v/Projects/Personal/MailJail/docs/adr/0001-use-bastille.md) for the orchestration decision.
+The current implementation is a single `mailjail` CLI binary written in Go. It drives Bastille, ZFS, PF, `pkg`, and service management from a declarative config file. See [docs/cli.md](/Users/vnedyalk0v/Projects/Personal/MailJail/docs/cli.md) for the command model and [docs/adr/0001-use-bastille.md](/Users/vnedyalk0v/Projects/Personal/MailJail/docs/adr/0001-use-bastille.md) for the orchestration decision.
 
 ## Example Configuration Model
 
@@ -178,14 +178,54 @@ modules:
 - support for immutable templates where practical
 - audit-friendly logs and predictable state transitions
 
-## What Is Missing Today
+## Current Implementation Status
 
-The repository does not yet contain an implementation. The first practical goal is to lock down:
+The repository now contains the first working Go CLI slice:
 
-- config schema
-- CLI execution model
-- module dependency graph
-- filesystem/network layout
-- Bastille integration boundary
+- `mailjail init`
+- `mailjail validate`
+- `mailjail plan`
+- `mailjail apply`
+- `mailjail status`
 
-After that, the implementation language can be chosen and the first vertical slice can be built: `validate -> plan -> create base jail`.
+The current implementation covers:
+
+- YAML config loading
+- schema validation
+- host preflight checks
+- deterministic plan generation
+- ZFS dataset creation
+- Bastille release bootstrap
+- base jail creation
+- local apply state recording
+
+The next practical goals are:
+
+- PF integration
+- package installation inside jails
+- config rendering
+- module-specific planners and health checks
+- restart and upgrade workflows
+
+## Development
+
+Build and verify the current CLI with:
+
+```text
+go test ./...
+go vet ./...
+go run ./cmd/mailjail plan -c examples/mailjail.example.yml
+```
+
+For repeatable local workflows, use [Makefile](/Users/vnedyalk0v/Projects/Personal/MailJail/Makefile):
+
+```text
+make ci
+make build-freebsd-amd64
+make build-freebsd-arm64
+```
+
+GitHub Actions now builds release artifacts for:
+
+- `freebsd/amd64`
+- `freebsd/arm64`

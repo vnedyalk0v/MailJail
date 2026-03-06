@@ -1,0 +1,53 @@
+package config
+
+func Template() string {
+	return `apiVersion: mailjail.io/v1alpha1
+kind: MailStack
+
+metadata:
+  name: mx1
+
+host:
+  hostname: mx1.example.com
+  externalInterface: vtnet0
+  zfsPool: zroot
+  jailDatasetRoot: zroot/mailjail
+  bastille:
+    dataset: zroot/bastille
+    release: 15.0-RELEASE
+
+network:
+  domain: example.com
+  bridge: bridge0
+  jailsSubnet: 10.77.0.0/24
+  gateway4: 10.77.0.1
+
+tls:
+  mode: acme
+  email: admin@example.com
+
+profiles:
+  - core
+
+modules:
+  postfix:
+    enabled: true
+    ip4: 10.77.0.10
+  dovecot:
+    enabled: true
+    ip4: 10.77.0.11
+  rspamd:
+    enabled: true
+    ip4: 10.77.0.12
+  redis:
+    enabled: true
+    ip4: 10.77.0.13
+  db:
+    enabled: false
+    ip4: 10.77.0.14
+  web:
+    enabled: true
+    ip4: 10.77.0.15
+    edge: angie
+`
+}
