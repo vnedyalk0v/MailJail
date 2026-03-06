@@ -44,7 +44,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		printUsage(stdout)
 		return 0
 	case "version":
-		fmt.Fprintln(stdout, version)
+		writeln(stdout, version)
 		return 0
 	case "init":
 		return runInit(args[1:], stdout, stderr)
@@ -57,7 +57,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	case "status":
 		return runStatus(args[1:], stdout, stderr)
 	default:
-		fmt.Fprintf(stderr, "unknown command %q\n\n", args[0])
+		writef(stderr, "unknown command %q\n\n", args[0])
 		printUsage(stderr)
 		return 2
 	}
@@ -79,25 +79,25 @@ func runInit(args []string, stdout, stderr io.Writer) int {
 
 	if !force {
 		if _, err := os.Stat(outputPath); err == nil {
-			fmt.Fprintf(stderr, "%s already exists; use --force to overwrite\n", outputPath)
+			writef(stderr, "%s already exists; use --force to overwrite\n", outputPath)
 			return 1
 		} else if !errors.Is(err, os.ErrNotExist) {
-			fmt.Fprintf(stderr, "failed to check %s: %v\n", outputPath, err)
+			writef(stderr, "failed to check %s: %v\n", outputPath, err)
 			return 1
 		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil && filepath.Dir(outputPath) != "." {
-		fmt.Fprintf(stderr, "failed to create parent directory for %s: %v\n", outputPath, err)
+		writef(stderr, "failed to create parent directory for %s: %v\n", outputPath, err)
 		return 1
 	}
 
 	if err := os.WriteFile(outputPath, []byte(config.Template()), 0o640); err != nil {
-		fmt.Fprintf(stderr, "failed to write %s: %v\n", outputPath, err)
+		writef(stderr, "failed to write %s: %v\n", outputPath, err)
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "wrote starter config to %s\n", outputPath)
+	writef(stdout, "wrote starter config to %s\n", outputPath)
 	return 0
 }
 
@@ -125,7 +125,7 @@ func runValidate(ctx context.Context, logger *slog.Logger, args []string, stdout
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "configuration for stack %q is valid\n", cfg.Metadata.Name)
+	writef(stdout, "configuration for stack %q is valid\n", cfg.Metadata.Name)
 	return 0
 }
 
@@ -151,15 +151,15 @@ func runPlan(ctx context.Context, logger *slog.Logger, args []string, stdout, st
 
 	pl, err := plan.Build(cfg)
 	if err != nil {
-		fmt.Fprintf(stderr, "failed to build plan: %v\n", err)
+		writef(stderr, "failed to build plan: %v\n", err)
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "plan generated at %s\n", pl.GeneratedAt.Format(time.RFC3339))
+	writef(stdout, "plan generated at %s\n", pl.GeneratedAt.Format(time.RFC3339))
 	for idx, action := range pl.Actions {
-		fmt.Fprintf(stdout, "%d. [%s] %s\n", idx+1, action.Type, action.Summary)
+		writef(stdout, "%d. [%s] %s\n", idx+1, action.Type, action.Summary)
 		if len(action.CommandPreview) > 0 {
-			fmt.Fprintf(stdout, "   command: %s\n", action.CommandString())
+			writef(stdout, "   command: %s\n", action.CommandString())
 		}
 	}
 
@@ -193,7 +193,7 @@ func runApply(ctx context.Context, logger *slog.Logger, args []string, stdout, s
 
 	pl, err := plan.Build(cfg)
 	if err != nil {
-		fmt.Fprintf(stderr, "failed to build plan: %v\n", err)
+		writef(stderr, "failed to build plan: %v\n", err)
 		return 1
 	}
 
@@ -207,13 +207,13 @@ func runApply(ctx context.Context, logger *slog.Logger, args []string, stdout, s
 		if result.Err != "" {
 			status = "error"
 		}
-		fmt.Fprintf(stdout, "[%s] %s\n", status, result.Action.Summary)
+		writef(stdout, "[%s] %s\n", status, result.Action.Summary)
 		if result.Err != "" {
-			fmt.Fprintf(stdout, "  %s\n", result.Err)
+			writef(stdout, "  %s\n", result.Err)
 		}
 	}
 	if err != nil {
-		fmt.Fprintf(stderr, "apply failed: %v\n", err)
+		writef(stderr, "apply failed: %v\n", err)
 	}
 
 	record := state.ApplyRecord{
@@ -224,7 +224,7 @@ func runApply(ctx context.Context, logger *slog.Logger, args []string, stdout, s
 	}
 
 	if saveErr := state.SaveApply(stateDir, record); saveErr != nil {
-		fmt.Fprintf(stderr, "apply completed but failed to write state: %v\n", saveErr)
+		writef(stderr, "apply completed but failed to write state: %v\n", saveErr)
 		if err == nil {
 			return 1
 		}
@@ -234,7 +234,7 @@ func runApply(ctx context.Context, logger *slog.Logger, args []string, stdout, s
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "apply completed successfully\n")
+	writeln(stdout, "apply completed successfully")
 	return 0
 }
 
@@ -253,21 +253,21 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 	record, err := state.LoadLatest(stateDir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			fmt.Fprintf(stdout, "no apply state found in %s\n", stateDir)
+			writef(stdout, "no apply state found in %s\n", stateDir)
 			return 0
 		}
-		fmt.Fprintf(stderr, "failed to load state from %s: %v\n", stateDir, err)
+		writef(stderr, "failed to load state from %s: %v\n", stateDir, err)
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "last apply: %s\n", record.AppliedAt.Format(time.RFC3339))
-	fmt.Fprintf(stdout, "config: %s\n", record.ConfigPath)
-	fmt.Fprintf(stdout, "planned actions: %d\n", len(record.Plan.Actions))
+	writef(stdout, "last apply: %s\n", record.AppliedAt.Format(time.RFC3339))
+	writef(stdout, "config: %s\n", record.ConfigPath)
+	writef(stdout, "planned actions: %d\n", len(record.Plan.Actions))
 	for _, result := range record.Results {
-		fmt.Fprintf(stdout, "- [%s] %s\n", result.Status, result.Summary)
+		writef(stdout, "- [%s] %s\n", result.Status, result.Summary)
 	}
 	for _, module := range record.Health.Modules {
-		fmt.Fprintf(stdout, "- module=%s enabled=%t status=%s\n", module.Name, module.Enabled, module.Status)
+		writef(stdout, "- module=%s enabled=%t status=%s\n", module.Name, module.Enabled, module.Status)
 	}
 
 	return 0
@@ -276,7 +276,7 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 func loadAndValidateConfig(logger *slog.Logger, configPath string, stderr io.Writer) (*config.Config, bool) {
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		fmt.Fprintf(stderr, "failed to load %s: %v\n", configPath, err)
+		writef(stderr, "failed to load %s: %v\n", configPath, err)
 		return nil, true
 	}
 
@@ -284,7 +284,7 @@ func loadAndValidateConfig(logger *slog.Logger, configPath string, stderr io.Wri
 	if len(issues) > 0 {
 		logger.Warn("configuration validation failed", "issues", len(issues))
 		for _, issue := range issues {
-			fmt.Fprintf(stderr, "%s: %s\n", issue.Path, issue.Message)
+			writef(stderr, "%s: %s\n", issue.Path, issue.Message)
 		}
 		return nil, true
 	}
@@ -294,12 +294,12 @@ func loadAndValidateConfig(logger *slog.Logger, configPath string, stderr io.Wri
 
 func printPreflight(stdout io.Writer, results []preflight.Result) {
 	for _, result := range results {
-		fmt.Fprintf(stdout, "preflight [%s] %s: %s\n", result.Status, result.Name, result.Message)
+		writef(stdout, "preflight [%s] %s: %s\n", result.Status, result.Name, result.Message)
 	}
 }
 
 func printUsage(out io.Writer) {
-	fmt.Fprintln(out, `mailjail manages a Bastille-backed FreeBSD mail stack.
+	writeln(out, `mailjail manages a Bastille-backed FreeBSD mail stack.
 
 Usage:
   mailjail <command> [options]
@@ -311,4 +311,12 @@ Commands:
   plan      Print the current execution plan
   apply     Execute the first provisioning slice
   status    Show the latest recorded apply status`)
+}
+
+func writef(w io.Writer, format string, args ...any) {
+	_, _ = fmt.Fprintf(w, format, args...)
+}
+
+func writeln(w io.Writer, text string) {
+	_, _ = fmt.Fprintln(w, text)
 }

@@ -220,10 +220,23 @@ go run ./cmd/mailjail plan -c examples/mailjail.example.yml
 For repeatable local workflows, use [Makefile](/Users/vnedyalk0v/Projects/Personal/MailJail/Makefile):
 
 ```text
+make tools
+make install-hooks
+make check
 make ci
 make build-freebsd-amd64
 make build-freebsd-arm64
 ```
+
+`make check` is the closest local equivalent of the GitHub CI verification flow. It installs repo-local tool binaries under `bin/tools` and runs formatting, module drift checks, tests, race tests, vet, lint, and vulnerability scanning.
+
+To enforce the same checks before every push, install the repository hook path once:
+
+```text
+make install-hooks
+```
+
+That enables [.githooks/pre-push](/Users/vnedyalk0v/Projects/Personal/MailJail/.githooks/pre-push), which runs `make check` automatically before `git push`.
 
 GitHub Actions now builds release artifacts for:
 
