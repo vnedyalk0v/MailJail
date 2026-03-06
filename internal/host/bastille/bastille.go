@@ -74,3 +74,73 @@ func (c Client) EnsureJail(ctx context.Context, name, release, ipCIDR, iface str
 
 	return nil
 }
+
+func (c Client) InstallPackages(ctx context.Context, jail string, packages []string) error {
+	if jail == "" {
+		return errors.New("jail is required")
+	}
+	if len(packages) == 0 {
+		return errors.New("at least one package is required")
+	}
+
+	args := []string{"pkg", jail, "install", "-y"}
+	args = append(args, packages...)
+
+	_, err := c.Runner.Run(ctx, command.Spec{
+		Path:    "bastille",
+		Args:    args,
+		Timeout: 20 * time.Minute,
+	})
+	if err != nil {
+		return fmt.Errorf("install packages in jail %s: %w", jail, err)
+	}
+	return nil
+}
+
+func (c Client) SetRC(ctx context.Context, jail, setting string) error {
+	if jail == "" {
+		return errors.New("jail is required")
+	}
+	if setting == "" {
+		return errors.New("setting is required")
+	}
+
+	_, err := c.Runner.Run(ctx, command.Spec{
+		Path:    "bastille",
+		Args:    []string{"sysrc", jail, setting},
+		Timeout: 2 * time.Minute,
+	})
+	if err != nil {
+		return fmt.Errorf("set sysrc in jail %s: %w", jail, err)
+	}
+	return nil
+}
+
+func (c Client) EnsureServiceStarted(ctx context.Context, jail, service string) error {
+	if jail == "" {
+		return errors.New("jail is required")
+	}
+	if service == "" {
+		return errors.New("service is required")
+	}
+
+	_, statusErr := c.Runner.Run(ctx, command.Spec{
+		Path:    "bastille",
+		Args:    []string{"cmd", jail, "service", service, "onestatus"},
+		Timeout: 30 * time.Second,
+	})
+	if statusErr == nil {
+		return nil
+	}
+
+	_, startErr := c.Runner.Run(ctx, command.Spec{
+		Path:    "bastille",
+		Args:    []string{"service", jail, service, "start"},
+		Timeout: 2 * time.Minute,
+	})
+	if startErr != nil {
+		return fmt.Errorf("start service %s in jail %s: %w", service, jail, startErr)
+	}
+
+	return nil
+}

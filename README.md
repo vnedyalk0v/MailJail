@@ -198,13 +198,15 @@ The current implementation covers:
 - PF anchor rendering and loading
 - Bastille release bootstrap
 - base jail creation
+- Redis module jail creation
+- package installation inside the Redis jail
+- Redis service enable and start orchestration
 - local apply state recording
 
 The next practical goals are:
 
-- package installation inside jails
 - config rendering
-- module-specific planners and health checks
+- additional module planners and health checks
 - restart and upgrade workflows
 
 ## Development

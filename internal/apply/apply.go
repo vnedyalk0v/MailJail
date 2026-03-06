@@ -81,6 +81,12 @@ func (a *Applier) executeAction(ctx context.Context, action plan.Action) error {
 		return a.pf.EnsureAnchor(ctx, a.cfg)
 	case plan.ActionEnsureBaseJail:
 		return a.ensureBaseJail(ctx, action)
+	case plan.ActionInstallPackages:
+		return a.ensurePackages(ctx, action)
+	case plan.ActionEnableService:
+		return a.enableService(ctx, action)
+	case plan.ActionStartService:
+		return a.startService(ctx, action)
 	default:
 		return fmt.Errorf("unsupported action type %s", action.Type)
 	}
@@ -102,4 +108,39 @@ func (a *Applier) ensureBaseJail(ctx context.Context, action plan.Action) error 
 	}
 
 	return a.bastille.EnsureJail(ctx, action.Target, action.CommandPreview[3], ipCIDR, iface)
+}
+
+func (a *Applier) ensurePackages(ctx context.Context, action plan.Action) error {
+	jail := action.Target
+	if metadataJail := action.Metadata["jail"]; metadataJail != "" {
+		jail = metadataJail
+	}
+	if jail == "" {
+		return fmt.Errorf("package action requires jail metadata")
+	}
+	if len(action.Items) == 0 {
+		return fmt.Errorf("package action requires at least one package")
+	}
+
+	return a.bastille.InstallPackages(ctx, jail, action.Items)
+}
+
+func (a *Applier) enableService(ctx context.Context, action plan.Action) error {
+	jail := action.Metadata["jail"]
+	rcvar := action.Metadata["rcvar"]
+	if jail == "" || rcvar == "" {
+		return fmt.Errorf("enable service action requires jail and rcvar metadata")
+	}
+
+	return a.bastille.SetRC(ctx, jail, rcvar)
+}
+
+func (a *Applier) startService(ctx context.Context, action plan.Action) error {
+	jail := action.Metadata["jail"]
+	service := action.Metadata["service"]
+	if jail == "" || service == "" {
+		return fmt.Errorf("start service action requires jail and service metadata")
+	}
+
+	return a.bastille.EnsureServiceStarted(ctx, jail, service)
 }

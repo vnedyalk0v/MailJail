@@ -18,13 +18,18 @@ const (
 	ActionEnsureBastilleSetup ActionType = "EnsureBastilleRelease"
 	ActionEnsurePFAnchor      ActionType = "EnsurePFAnchor"
 	ActionEnsureBaseJail      ActionType = "EnsureJail"
+	ActionInstallPackages     ActionType = "InstallPackages"
+	ActionEnableService       ActionType = "EnableService"
+	ActionStartService        ActionType = "StartService"
 )
 
 type Action struct {
-	Type           ActionType `json:"type"`
-	Target         string     `json:"target"`
-	Summary        string     `json:"summary"`
-	CommandPreview []string   `json:"commandPreview,omitempty"`
+	Type           ActionType        `json:"type"`
+	Target         string            `json:"target"`
+	Summary        string            `json:"summary"`
+	CommandPreview []string          `json:"commandPreview,omitempty"`
+	Items          []string          `json:"items,omitempty"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
 }
 
 func (a Action) CommandString() string {
@@ -98,6 +103,12 @@ func Build(cfg *config.Config) (*Plan, error) {
 			},
 		},
 	}
+
+	redisActions, err := buildRedisActions(cfg)
+	if err != nil {
+		return nil, err
+	}
+	actions = append(actions, redisActions...)
 
 	return &Plan{
 		GeneratedAt: time.Now().UTC(),

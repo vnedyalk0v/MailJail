@@ -11,6 +11,29 @@ func BaseJailName(cfg *config.Config) string {
 	return cfg.Metadata.Name + "-base"
 }
 
+func ModuleJailName(cfg *config.Config, module string) string {
+	return cfg.Metadata.Name + "-" + module
+}
+
+func ModuleIPCIDR(cfg *config.Config, module string) (string, error) {
+	moduleCfg, ok := cfg.Modules[module]
+	if !ok || !moduleCfg.Enabled {
+		return "", fmt.Errorf("module %s is not enabled", module)
+	}
+
+	addr, err := netip.ParseAddr(moduleCfg.IP4)
+	if err != nil {
+		return "", fmt.Errorf("parse ip for module %s: %w", module, err)
+	}
+
+	prefix, err := netip.ParsePrefix(cfg.Network.JailsSubnet)
+	if err != nil {
+		return "", fmt.Errorf("parse subnet: %w", err)
+	}
+
+	return fmt.Sprintf("%s/%d", addr.String(), prefix.Bits()), nil
+}
+
 func DeriveBaseJailIP(cfg *config.Config) (netip.Addr, error) {
 	prefix, err := netip.ParsePrefix(cfg.Network.JailsSubnet)
 	if err != nil {
