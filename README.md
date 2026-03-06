@@ -207,13 +207,16 @@ The current implementation covers:
 - Dovecot module jail creation
 - package installation inside the Dovecot jail
 - Dovecot service enable and start orchestration
+- Postfix module jail creation
+- package installation inside the Postfix jail
+- Postfix service enable and start orchestration
 - local apply state recording
 
 The next practical goals are:
 
 - config rendering
 - health checks
-- Postfix module planner
+- richer mail-service configuration
 - restart and upgrade workflows
 
 ## Development

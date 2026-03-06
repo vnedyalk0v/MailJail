@@ -122,6 +122,12 @@ func Build(cfg *config.Config) (*Plan, error) {
 	}
 	actions = append(actions, dovecotActions...)
 
+	postfixActions, err := buildPostfixActions(cfg)
+	if err != nil {
+		return nil, err
+	}
+	actions = append(actions, postfixActions...)
+
 	return &Plan{
 		GeneratedAt: time.Now().UTC(),
 		ConfigName:  cfg.Metadata.Name,
