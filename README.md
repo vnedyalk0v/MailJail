@@ -1,6 +1,6 @@
 # MailJail
 
-MailJail is a modular mail server stack for FreeBSD that uses native FreeBSD jails and ZFS instead of Docker containers. The goal is to provide a reproducible, automated, and maintainable way to deploy production-ready email infrastructure.
+MailJail is a modular mail server stack for FreeBSD that uses native FreeBSD jails and ZFS instead of Docker containers. The project uses Bastille as its jail orchestration layer and Angie as its web edge/proxy layer. The goal is to provide a reproducible, automated, and maintainable way to deploy production-ready email infrastructure.
 
 ## Goals
 
@@ -17,7 +17,7 @@ MailJail is a modular mail server stack for FreeBSD that uses native FreeBSD jai
 - `rspamd`: spam filtering and policy decisions
 - `redis`: cache/backend for Rspamd and other stateful dependencies
 - `db`: configuration and application database
-- `web`: admin and user web interface
+- `web`: Angie-based web edge, admin and user web interface
 - `acme`: TLS certificates and rotation
 - `dns`: DNS prerequisite validation, without necessarily hosting DNS
 
@@ -32,6 +32,7 @@ The host machine is responsible for:
 - packet filter rules
 - secrets placement
 - lifecycle orchestration
+- Bastille bootstrap and jail lifecycle integration
 
 Each jail is responsible only for its specific service.
 
@@ -41,7 +42,7 @@ The desired state is described in a configuration file. The CLI tool:
 
 1. validates the configuration
 2. prepares host prerequisites
-3. creates datasets
+3. prepares Bastille and datasets
 4. creates and connects jails
 5. installs packages
 6. renders configuration files
@@ -76,6 +77,8 @@ mailjail restart <module>
 mailjail destroy --keep-data
 ```
 
+The first implementation target is a single `mailjail` CLI binary that drives Bastille, ZFS, PF, `pkg`, and service management from a declarative config file. See [docs/cli.md](/Users/vnedyalk0v/Projects/Personal/MailJail/docs/cli.md) for the command model and [docs/adr/0001-use-bastille.md](/Users/vnedyalk0v/Projects/Personal/MailJail/docs/adr/0001-use-bastille.md) for the orchestration decision.
+
 ## Example Configuration Model
 
 ```yaml
@@ -90,6 +93,9 @@ host:
   externalInterface: vtnet0
   zfsPool: zroot
   jailDatasetRoot: zroot/mailjail
+  bastille:
+    dataset: zroot/bastille
+    release: 15.0-RELEASE
 
 network:
   domain: example.com
@@ -100,6 +106,9 @@ network:
 tls:
   mode: acme
   email: admin@example.com
+
+profiles:
+  - core
 
 modules:
   postfix:
@@ -115,11 +124,12 @@ modules:
     enabled: true
     ip4: 10.77.0.13
   db:
-    enabled: true
+    enabled: false
     ip4: 10.77.0.14
   web:
     enabled: true
     ip4: 10.77.0.15
+    edge: angie
 ```
 
 ## Implementation Phases
@@ -129,6 +139,7 @@ modules:
 - define the config schema
 - dry-run planning engine
 - host preflight checks
+- Bastille bootstrap integration
 - ZFS dataset provisioning
 - base jail lifecycle
 
@@ -148,7 +159,7 @@ modules:
 ### Phase 4: Control plane
 
 - database module
-- web UI
+- Angie web edge and web UI
 - account/domain management
 
 ### Phase 5: Operations
@@ -175,5 +186,6 @@ The repository does not yet contain an implementation. The first practical goal 
 - CLI execution model
 - module dependency graph
 - filesystem/network layout
+- Bastille integration boundary
 
 After that, the implementation language can be chosen and the first vertical slice can be built: `validate -> plan -> create base jail`.

@@ -9,6 +9,9 @@ host:
   externalInterface: vtnet0
   zfsPool: zroot
   jailDatasetRoot: zroot/mailjail
+  bastille:
+    dataset: zroot/bastille
+    release: 15.0-RELEASE
 
 network:
   domain: example.com
@@ -19,6 +22,9 @@ network:
 tls:
   mode: acme
   email: admin@example.com
+
+profiles:
+  - core
 
 modules:
   postfix:
@@ -34,8 +40,9 @@ modules:
     enabled: true
     ip4: 10.77.0.13
   db:
-    enabled: true
+    enabled: false
     ip4: 10.77.0.14
   web:
     enabled: true
     ip4: 10.77.0.15
+    edge: angie
